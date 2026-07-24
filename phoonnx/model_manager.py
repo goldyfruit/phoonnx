@@ -131,6 +131,7 @@ class TTSModelInfo:
     tokenizer_config_url: Optional[str] = None  # transformers provides tokenizer_config.json with metadata
     tokens_url: Optional[str] = None  # mimic3/sherpa provide phoneme_map in this format
     phoneme_map_url: Optional[str] = None  # json lookup table for phoneme replacement
+    dictionary_url: Optional[str] = None  # vosk: word -> phonemes pronunciation dictionary
     phoneme_type: Optional[PhonemeType] = None
     phonemizer_model: Optional[str] = None  # per-phonemizer variant (e.g. AhoTTS classic/modern/northern)
     alphabet: Optional[Alphabet] = None
@@ -208,6 +209,10 @@ class TTSModelInfo:
                     config["phoneme_type"] = "espeak"
             else:
                 config = {"phoneme_type": "graphemes", "alphabet": "unicode"}
+            # vosk voices ship a pronunciation dictionary; its local path is the
+            # phonemizer_model the VoskPhonemizer loads.
+            if self.dictionary_url and not self.phonemizer_model:
+                self.phonemizer_model = str(self.download_dictionary())
             if self.phoneme_type:
                 config["phoneme_type"] = self.phoneme_type
             if self.phonemizer_model:
@@ -490,6 +495,19 @@ class TTSModelInfo:
             paths[key] = aux_path
         return paths
 
+    def download_dictionary(self) -> Optional[Path]:
+        """Download the vosk pronunciation ``dictionary`` (word -> phonemes), if any.
+
+        The file is large (tens of MB) but optional: the phonemizer falls back
+        to rule-based g2p for any out-of-dictionary word.
+        """
+        if not self.dictionary_url:
+            return None
+        dict_path = self.voice_path / "dictionary"
+        if not _is_cached(dict_path):
+            _stream_to_file(self.dictionary_url, dict_path, timeout=600)
+        return dict_path
+
     def download_bpe_tokenizer(self) -> Optional[Path]:
         """Download the HF ``tokenizer.json`` (Chatterbox subword BPE) from
         ``tokenizer_config_url``, if any."""
@@ -580,6 +598,9 @@ class TTSModelInfo:
         elif self.tokens_url:
             self.download_tokens_txt()
 
+        # vosk pronunciation dictionary (the phonemizer's model)
+        self.download_dictionary()
+
         # vocoder / style / speaker-encoder / aux graphs
         self.engine_params()
         return model_path
@@ -628,6 +649,14 @@ class TTSModelInfo:
                               engine_params=self.engine_params() or None,
                               providers=providers,
                               phonemes_txt=str(tokens_path) if self.tokens_url else None)
+        # A phonemizer_model resolved from the index (the vosk pronunciation
+        # dictionary) is an index-level artifact: the published config.json never
+        # references it, so the config loaded from disk cannot carry it.
+        if self.phonemizer_model and not voice.config.phonemizer_model:
+            voice.config.phonemizer_model = self.phonemizer_model
+            voice.phonemizer = get_phonemizer(voice.config.phoneme_type,
+                                              alphabet=voice.config.alphabet,
+                                              model=self.phonemizer_model)
         # override phoneme_type, if config.json is wrong
         if self.phoneme_type != voice.config.phoneme_type or self.alphabet != voice.config.alphabet:
             voice.config.phoneme_type = self.phoneme_type
@@ -650,7 +679,7 @@ class TTSModelManager:
         "optispeech.json", "glowtts.json", "mixertts.json", "fastpitch.json",
         "coqui_community.json", "vits2.json", "styletts2.json", "f5tts.json",
         "coqui_vits.json", "BSC.json", "shami.json", "chatterbox.json",
-        "supertonic.json",
+        "supertonic.json", "vosk.json",
     )
 
     @classmethod

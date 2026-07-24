@@ -33,6 +33,7 @@ class Engine(str, Enum):
     F5TTS = "f5tts"  # F5-TTS / Habibi-TTS: DiT flow-matching, Euler ODE (iterative)
     CHATTERBOX = "chatterbox"  # autoregressive codec-LM, d-vector cloning + exaggeration
     SUPERTONIC = "supertonic"  # Supertone SuperTonic: 4-graph flow-matching, raw-text (no phonemizer)
+    VOSK = "vosk"  # alphacep vosk-tts: VITS + dictionary/rule Russian g2p
 
 
 # Alphabet and PhonemeType are wire-format enums shared with scriptconv;
@@ -237,6 +238,26 @@ class VoiceConfig:
         return True
 
     @staticmethod
+    def is_vosk(config: dict[str, Any]) -> bool:
+        """Recognise an alphacep vosk-tts voice from its config alone.
+
+        Indexed voices name ``engine: vosk`` and never reach here; this is for
+        a *local* vosk model directory, whose config.json is piper-shaped (list
+        valued ``phoneme_id_map``, an ``espeak`` stanza) but carries no
+        ``phoneme_type`` and no engine name.  Its phoneme inventory is the
+        romanised-Russian set (``a0``/``a1``/``bj``/``sch`` …), which no
+        IPA or espeak voice has — that inventory is the signature.
+        """
+        # an explicitly declared non-vosk engine wins over shape-sniffing
+        engine = config.get("engine")
+        if engine and engine not in ("vosk", Engine.VOSK, Engine.VOSK.value):
+            return False
+        pid = config.get("phoneme_id_map")
+        if not isinstance(pid, dict) or not pid:
+            return False
+        return "a0" in pid and "sch" in pid
+
+    @staticmethod
     def is_coqui_vits(config: dict[str, Any]) -> bool:
         # coqui vits grapheme models include a "characters" section with token info
         if "characters" not in config or not isinstance(config["characters"], dict):
@@ -345,6 +366,22 @@ class VoiceConfig:
             config["eos"] = config.get("eos") or DEFAULT_EOS_TOKEN
 
             tokenizer = TTSTokenizer.from_phoonnx_config(config)
+
+        # alphacep vosk-tts: piper-shaped VITS with a dictionary/rule Russian g2p
+        elif (engine == Engine.VOSK or config.get("engine") == "vosk"
+                or (not engine and VoiceConfig.is_vosk(config))):
+            engine = Engine.VOSK
+            lang_code = lang_code or config.get("lang_code") or "ru"
+            phoneme_type = phoneme_type or PhonemeType.VOSK
+            alphabet = alphabet or Alphabet.VOSK
+
+            # fixed special tokens (ids 0/1/2 in every vosk phoneme_id_map)
+            config["pad"] = DEFAULT_PAD_TOKEN
+            config["blank"] = DEFAULT_BLANK_TOKEN
+            config["bos"] = DEFAULT_BOS_TOKEN
+            config["eos"] = DEFAULT_EOS_TOKEN
+
+            tokenizer = TTSTokenizer.from_vosk_config(config)
 
         # check if model was trained for PiperTTS
         elif VoiceConfig.is_piper(config):
@@ -549,6 +586,7 @@ class VoiceConfig:
             "use_eos_bos": tok.use_eos_bos,
             "blank_at_start": tok.blank_at_start,
             "blank_at_end": tok.blank_at_end,
+            "fold_compounds": tok.fold_compounds,
             "word_sep_token": self.word_sep_token,
             "blank_between": self.blank_between.value if self.blank_between else "tokens_and_words",
             "engine_params": dict(self.engine_params or {}),

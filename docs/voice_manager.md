@@ -11,7 +11,7 @@ The catalog is not fetched from a handful of live endpoints. `merge_default_voic
 `OVOS`, `MMS`, `proxectonos`, `piper`, `phonikud`, `neurlang`, `mimic3`,
 `transformers_community`, `piper_community`, `optispeech`, `glowtts`, `mixertts`,
 `fastpitch`, `coqui_community`, `vits2`, `styletts2`, `f5tts`, `coqui_vits`, `BSC`,
-`shami`, `chatterbox`, `supertonic`.
+`shami`, `chatterbox`, `supertonic`, `vosk`.
 
 Each JSON entry becomes a `TTSModelInfo`. Model/config/vocoder files are only fetched from their URLs when a voice is actually downloaded or loaded.
 
@@ -164,6 +164,7 @@ relevant to specific engine families (see [engines.md](engines.md), [cloning.md]
 | `vocoder_config_url` | `str` \| `None` | Vocoder `vocoder.json` parameters |
 | `vocoder_type` | `str` \| `None` | Vocoder implementation (`vocos`, `wavenext`, `hifigan`, `melgan`, `raw`, `griffinlim`) |
 | `style_url` | `str` \| `None` | Per-voice StyleTTS2/Kokoro style embedding |
+| `dictionary_url` | `str` \| `None` | Vosk pronunciation dictionary (word → phonemes); downloaded as the voice's `phonemizer_model` |
 | `speaker_encoder_url` / `speaker_encoder_type` | `str` \| `None` | Cloning speaker-encoder ONNX (reference audio → d-vector) |
 | `aux_model_urls` | `dict` \| `None` | Extra ONNX graphs/files for multi-graph engines (F5-TTS; SuperTonic's `duration_predictor`/`text_encoder`/`vocoder` graphs plus its `tts.json` config, `unicode_indexer.json` and per-speaker `style.json`), keyed by engine-param name |
 | `display_name` | `str` \| `None` | Friendly name for UIs/CLIs; may contain `{engine}`/`{phoneme_type}` placeholders |

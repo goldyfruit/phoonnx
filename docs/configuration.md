@@ -167,6 +167,7 @@ to a dedicated adapter. The adapter registry itself is described in [Engines](en
 | `shami` | Levantine Arabic / English (HamsVITS) | [Shami](training/engines/shami.md) |
 | `f5tts` | DiT flow-matching (F5-TTS / Habibi) | [F5-TTS](training/engines/f5tts.md) |
 | `chatterbox` | Autoregressive codec-LM cloning | [Chatterbox](training/engines/chatterbox.md) |
+| `vosk` | VITS (shared adapter), vosk-tts Russian front-end | [Engines](engines.md) |
 
 ## Execution Providers
 

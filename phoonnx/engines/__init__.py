@@ -150,6 +150,8 @@ def _register_builtins() -> None:
     # normal single-graph voice, but a normal VITS voice must not steal a split one.
     register_engine("vits_streaming", VitsStreamingAdapter, detect_priority=48)
     register_engine("vits", VitsAdapter, detect_priority=50)
+    # alphacep vosk-tts voices are VITS exports (input/input_lengths/scales[/sid])
+    register_engine("vosk", VitsAdapter, detect_priority=49)
     register_engine("matcha", MatchaAdapter, detect_priority=40)
     register_engine("glowtts", GlowTTSAdapter, detect_priority=42)
     register_engine("mixertts", MixerTTSAdapter, detect_priority=36)
