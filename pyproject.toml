@@ -51,6 +51,8 @@ test = [
     "torchaudio",
     "pytorch-lightning>=2.0,<3",
     "ovos-plugin-manager>=2.1.0",
+    # MOSS-TTS-Nano ships a SentencePiece text tokenizer
+    "sentencepiece",
     "pycotovia>=0.1.0",
     "ahotts-g2p>=0.1.0",
     "espyak>=0.0.3a1",

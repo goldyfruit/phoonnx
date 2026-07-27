@@ -33,6 +33,7 @@ class Engine(str, Enum):
     F5TTS = "f5tts"  # F5-TTS / Habibi-TTS: DiT flow-matching, Euler ODE (iterative)
     CHATTERBOX = "chatterbox"  # autoregressive codec-LM, d-vector cloning + exaggeration
     SUPERTONIC = "supertonic"  # Supertone SuperTonic: 4-graph flow-matching, raw-text (no phonemizer)
+    MOSSTTS = "mosstts"  # MOSS-TTS-Nano: autoregressive RVQ-16 codec-LM, zero-shot cloning @48kHz
 
 
 # Alphabet and PhonemeType are wire-format enums shared with scriptconv;
@@ -306,6 +307,27 @@ class VoiceConfig:
             diacritics = (lang_code or "").lower().startswith(("ar", "he"))
             config.setdefault("audio", {}).setdefault("sample_rate", 24000)
             config.setdefault("num_symbols", tokenizer._tok.get_vocab_size())
+
+        elif (engine == Engine.MOSSTTS or
+                (isinstance(engine, str) and engine == "mosstts") or
+                config.get("engine") == "mosstts"):
+            # MOSS-TTS-Nano consumes raw text: the adapter owns text -> id conversion
+            # via its own SentencePiece model (loaded from engine_params), so no
+            # phonemizer/tokenizer vocabulary is built here. Alphabet.GRAPHEMES routes
+            # TTSVoice.synthesize() through adapter.encode_text(). Native output is
+            # 48 kHz (stereo, downmixed to mono by the adapter).
+            engine = Engine.MOSSTTS
+            phoneme_type = phoneme_type or PhonemeType.UNICODE
+            alphabet = alphabet or Alphabet.GRAPHEMES
+            config.setdefault("audio", {}).setdefault("sample_rate", 48000)
+            tokenizer = TTSTokenizer(
+                Vocabulary(char2idx={}, pad=DEFAULT_PAD_TOKEN),
+                add_blank_char=False,
+                add_blank_word=False,
+                use_eos_bos=False,
+                blank_at_end=False,
+                blank_at_start=False,
+            )
 
         elif (engine == Engine.SUPERTONIC or
                 (isinstance(engine, str) and engine == "supertonic") or
