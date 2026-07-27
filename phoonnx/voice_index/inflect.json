@@ -1,0 +1,32 @@
+{
+    "inflect/micro-en": {
+        "voice_id": "inflect/micro-en",
+        "model_url": "https://huggingface.co/OpenVoiceOS/phoonnx-inflect/resolve/main/micro-en/duration.onnx",
+        "config_url": "https://huggingface.co/OpenVoiceOS/phoonnx-inflect/resolve/main/micro-en/duration.onnx.json",
+        "vocab_url": null,
+        "tokenizer_config_url": null,
+        "tokens_url": null,
+        "phoneme_map_url": null,
+        "phoneme_type": "espeak",
+        "alphabet": "ipa",
+        "lang": "en-us",
+        "aux_model_urls": {
+            "decode_path": "https://huggingface.co/OpenVoiceOS/phoonnx-inflect/resolve/main/micro-en/decode.onnx"
+        }
+    },
+    "inflect/nano-en": {
+        "voice_id": "inflect/nano-en",
+        "model_url": "https://huggingface.co/OpenVoiceOS/phoonnx-inflect/resolve/main/nano-en/duration.onnx",
+        "config_url": "https://huggingface.co/OpenVoiceOS/phoonnx-inflect/resolve/main/nano-en/duration.onnx.json",
+        "vocab_url": null,
+        "tokenizer_config_url": null,
+        "tokens_url": null,
+        "phoneme_map_url": null,
+        "phoneme_type": "espeak",
+        "alphabet": "ipa",
+        "lang": "en-us",
+        "aux_model_urls": {
+            "decode_path": "https://huggingface.co/OpenVoiceOS/phoonnx-inflect/resolve/main/nano-en/decode.onnx"
+        }
+    }
+}
