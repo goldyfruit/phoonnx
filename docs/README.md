@@ -54,6 +54,7 @@ how to obtain or train it, and a synthesis example:
 [ZipVoice](training/engines/zipvoice.md) ·
 [Chatterbox](training/engines/chatterbox.md) ·
 [F5-TTS](training/engines/f5tts.md) ·
+[MOSS-TTS-Nano](training/engines/mosstts.md) ·
 [Shami](training/engines/shami.md)
 
 ## Language notes
