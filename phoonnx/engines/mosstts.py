@@ -14,25 +14,10 @@ decode step emits a whole **frame of 16 codebook tokens**, produced by a second,
 loop is two-level: global step -> local frame -> feed the frame back as the next global
 input row.
 
-.. todo::
-
-   **Mirror the weights into the OVOS HuggingFace org before merging.** phoonnx vendors
-   every model it ships, so ``phoonnx/voice_index/mosstts.json`` must be repointed from
-   the upstream repos to:
-
-   * ``OpenVoiceOS/phoonnx-moss-tts-nano`` <- ``OpenMOSS-Team/MOSS-TTS-Nano-100M-ONNX``
-     (``moss_tts_prefill.onnx``, ``moss_tts_decode_step.onnx``,
-     ``moss_tts_local_fixed_sampled_frame.onnx``, ``moss_tts_local_cached_step.onnx``,
-     ``moss_tts_local_decoder.onnx``, ``moss_tts_global_shared.data``,
-     ``moss_tts_local_shared.data``, ``tokenizer.model``)
-   * ``OpenVoiceOS/phoonnx-moss-audio-tokenizer-nano`` <-
-     ``OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano-ONNX``
-     (``moss_audio_tokenizer_encode.onnx`` + ``.data``,
-     ``moss_audio_tokenizer_decode_full.onnx``, ``moss_audio_tokenizer_decode_shared.data``)
-
-   Both mirror READMEs must credit OpenMOSS and link the upstream repos (Apache-2.0).
-   The index currently points at the upstream repos so the engine works as-is; creating
-   the mirrors was blocked in the authoring environment.
+Weights are mirrored in the OVOS HuggingFace org, under
+``OpenVoiceOS/phoonnx-moss`` (``tts-nano-100m-onnx/`` and
+``audio-tokenizer-nano-onnx/`` subfolders), crediting upstream OpenMOSS / MOSI.AI
+(Apache-2.0).
 
 Official ONNX exports are used as published (no re-export):
 
