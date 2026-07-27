@@ -1,6 +1,6 @@
 """MOSS-TTS-Nano inference adapter — autoregressive codec-LM with zero-shot cloning.
 
-MOSS-TTS-Nano (OpenMOSS / MOSI.AI, Apache-2.0) is a ~100M-parameter codec-LM TTS: a
+MOSS-TTS-Nano (OpenMOSS, Apache-2.0) is a ~100M-parameter codec-LM TTS: a
 12-layer LLM backbone predicts *frames* of RVQ-16 audio tokens, which a ~20M "Cat"
 audio tokenizer (MOSS-Audio-Tokenizer-Nano) decodes to **48 kHz stereo** audio. It
 covers 20 languages and clones a voice zero-shot from a reference clip alone — no
@@ -16,7 +16,7 @@ input row.
 
 Weights are mirrored in the OVOS HuggingFace org, under
 ``OpenVoiceOS/phoonnx-moss`` (``tts-nano-100m-onnx/`` and
-``audio-tokenizer-nano-onnx/`` subfolders), crediting upstream OpenMOSS / MOSI.AI
+``audio-tokenizer-nano-onnx/`` subfolders), crediting upstream OpenMOSS
 (Apache-2.0).
 
 Official ONNX exports are used as published (no re-export):
