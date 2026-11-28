@@ -196,21 +196,21 @@ at its own pace and the audio is stretched, as above. Its adapter sets `PACE_BY_
 A call that names `speed` still goes to the model, and with `stretch_pace` off a rate sets
 `speed` as before.
 
-Measured on `supertonic/F1/en`, three sentences each in English and French, three to four takes
-per rate. The ratio is the time from the first sound to the last, over the same sentence at the
-normal pace; the word error rate is a speech recogniser's (Parakeet TDT 0.6b v3):
+Measured on `supertonic/F1/en`, three sentences in English and three in French, 14 or 15
+clips per rate. The ratio is the time from the first sound to the last, over the same sentence
+at the normal pace; the word error rate is a speech recogniser's (Parakeet TDT 0.6b v3):
 
 | Rate | Asked | Model speed: ratio (min to max), word errors | Stretch: ratio (min to max), word errors |
 | --- | --- | --- | --- |
-| `50%` | 2.00 | 1.63 (1.20 to 2.04), 2.6% | 2.01 (1.99 to 2.04), 0.0% |
-| `x-slow` | 1.67 | 1.44 (1.02 to 1.72), 2.6% | 1.68 (1.66 to 1.70), 0.0% |
-| `70%` | 1.43 | 1.21 (1.03 to 1.44), 2.6% | 1.44 (1.41 to 1.45), 1.3% |
-| `slow` | 1.25 | 1.12 (0.95 to 1.27), 2.6% | 1.26 (1.25 to 1.27), 5.1% |
-| `125%` | 0.80 | 0.88 (0.81 to 0.94), 6.2% | 0.81 (0.80 to 0.82), 6.2% |
-| `150%` | 0.67 | 0.78 (0.66 to 0.88), 10.9% | 0.67 (0.67 to 0.69), 6.2% |
-| `200%` | 0.50 | 0.36 (0.18 to 0.72), 68.8% | 0.51 (0.49 to 0.51), 6.2% |
+| `50%` | 2.00 | 1.78 (1.03 to 3.10), 10.3% | 2.01 (1.99 to 2.05), 1.4% |
+| `x-slow` | 1.67 | 1.58 (1.02 to 2.57), 9.6% | 1.68 (1.66 to 1.70), 5.5% |
+| `70%` | 1.43 | 1.34 (1.03 to 1.83), 8.2% | 1.44 (1.41 to 1.46), 6.2% |
+| `slow` | 1.25 | 1.17 (0.95 to 1.31), 6.8% | 1.26 (1.25 to 1.27), 8.2% |
+| `125%` | 0.80 | 0.92 (0.81 to 1.23), 9.1% | 0.81 (0.80 to 0.83), 9.1% |
+| `150%` | 0.67 | 0.81 (0.66 to 1.02), 11.4% | 0.67 (0.67 to 0.70), 9.1% |
+| `200%` | 0.50 | 0.44 (0.18 to 0.84), 56.8% | 0.51 (0.49 to 0.52), 11.4% |
 
-The normal pace itself had 5.1% word errors.
+The normal pace itself had 8.2% word errors.
 
 ## Time
 
