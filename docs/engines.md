@@ -98,6 +98,7 @@ The base class gives a default for each hook below. Override a hook only when th
 | `configure(voice_config)` | Does nothing. | The engine loads auxiliary graphs or reads `engine_params` one time at load. |
 | `length_scale_params(length_scale)` | Returns nothing: the engine reads `length_scale` itself. | The engine has a speed key of its own, such as `speed` or `pace`. Return that key for the length scale, scaled the way the engine reads it. |
 | `PACE_CONTROL` | `True` | The engine cannot change its pace at all: it reads neither `length_scale` nor a speed key, as a codec language model does. Set it to `False`, and `audio.stretch_pace` then time-stretches its audio. See [SSML](ssml.md#engines-without-pace-control). |
+| `PACE_BY_STRETCH` | `False` | The engine has a pace control that does not make the speech at the pace asked for. Set it to `True`, and `audio.stretch_pace` then has the engine speak at the voice's own pace and time-stretches its audio, unless the call names the engine's speed key. See [SSML](ssml.md#supertonics-pace). |
 
 ### Existing adapters
 

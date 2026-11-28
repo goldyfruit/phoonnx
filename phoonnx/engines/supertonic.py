@@ -227,6 +227,12 @@ class SuperTonicAdapter(BaseOnnxAdapter):
     the unpadded one as another noise draw is). Turn it on for speed, not for bit-equal output.
     """
 
+    #: ``speed`` divides the predicted durations, but the model does not slow its speech by
+    #: that much: a good part of the extra time of a slow rate comes out as silence, and the
+    #: amount differs from call to call. A fast rate drops words from about 1.5x. A time
+    #: stretch of the speech made at the voice's own pace gives the pace asked for.
+    PACE_BY_STRETCH = True
+
     def __init__(self, total_step: int = 8, speed: float = 1.05, silence_duration: float = 0.3):
         self.duration_predictor: Optional[onnxruntime.InferenceSession] = None
         self.text_encoder: Optional[onnxruntime.InferenceSession] = None

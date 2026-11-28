@@ -10,6 +10,7 @@ import pytest
 from phoonnx.config import AudioPost, SynthesisConfig, VoiceConfig
 from phoonnx.engines import get_adapter, list_engines
 from phoonnx.engines.base import AdapterSynthesisResult
+from phoonnx.engines.supertonic import SuperTonicAdapter
 from phoonnx.engines.vits import VitsAdapter
 from phoonnx.voice import AudioChunk, TTSVoice, Utterance
 
@@ -219,3 +220,91 @@ def test_the_engines_without_pace_control():
         adapter = get_adapter(name)
         assert type(adapter).length_scale_params is VitsAdapter.length_scale_params, (
             f"{name} has a speed key of its own, so it has pace control")
+
+
+# An engine whose own pace control is not exact (SuperTonic) is stretched too.
+
+class _Approximate(SuperTonicAdapter):
+    """SuperTonic's pace keys with a recorded engine: the speed each call asked for is kept,
+    and the audio is as long as the speed makes it."""
+
+    def __init__(self):
+        super().__init__()
+        self.speeds = []
+
+    def synthesize(self, request, session):
+        self.speeds.append(request.params["speed"])
+        return AdapterSynthesisResult(audio=_tone(SECONDS * 1.05 / request.params["speed"]))
+
+
+def test_supertonic_asks_for_a_stretch():
+    assert SuperTonicAdapter.PACE_CONTROL is True
+    assert SuperTonicAdapter.PACE_BY_STRETCH is True
+    assert not any(get_adapter(name).PACE_BY_STRETCH for name in ("vits", "styletts2"))
+
+
+def test_on_an_approximate_engine_speaks_at_its_own_pace_and_is_stretched():
+    adapter = _Approximate()
+    for length_scale in (0.5, 0.8, 1.25, 1 / 0.6, 2.0):
+        seconds = _seconds(_voice(adapter), SynthesisConfig(length_scale=length_scale, audio=ON))
+        assert seconds == pytest.approx(SECONDS * length_scale, abs=1 / RATE)
+    assert adapter.speeds == [pytest.approx(1.05)] * 5
+
+
+def test_off_an_approximate_engine_keeps_its_own_speed_control():
+    adapter = _Approximate()
+    seconds = _seconds(_voice(adapter), SynthesisConfig(length_scale=1.25, audio=OFF))
+    assert seconds == pytest.approx(SECONDS * 1.25, abs=1 / RATE)
+    assert adapter.speeds == [pytest.approx(1.05 / 1.25)]
+
+
+def test_a_speed_the_call_names_goes_to_the_engine():
+    adapter = _Approximate()
+    config = SynthesisConfig(length_scale=1.5, extra={"speed": 2.1}, audio=ON)
+    assert _seconds(_voice(adapter), config) == pytest.approx(SECONDS / 2, abs=1 / RATE)
+    assert adapter.speeds == [2.1]
+
+
+def test_a_length_scale_in_extra_is_stretched_not_passed_to_the_engine():
+    adapter = _Approximate()
+    config = SynthesisConfig(extra={"length_scale": 1.5}, audio=ON)
+    assert _seconds(_voice(adapter), config) == pytest.approx(SECONDS * 1.5, abs=1 / RATE)
+    assert adapter.speeds == [pytest.approx(1.05)]
+
+
+@pytest.mark.parametrize("inference, engine_params, speed, seconds", [
+    ({"length_scale": 1.2}, None, 1.05 / 1.2, SECONDS * 1.2),
+    (None, {"speed": 1.5}, 1.5, SECONDS * 0.7),
+])
+def test_the_voices_own_pace_stays_the_engines(inference, engine_params, speed, seconds):
+    adapter = _Approximate()
+    voice = _voice(adapter, inference=inference, engine_params=engine_params)
+    own = voice._voice_length_scale()
+    slow = _seconds(voice, SynthesisConfig(length_scale=own * 1.5, audio=ON))
+    assert adapter.speeds == [pytest.approx(speed)]
+    assert slow == pytest.approx(seconds * 1.5, abs=2 / RATE)
+
+
+def test_ssml_rate_on_an_approximate_engine_is_exact():
+    adapter = _Approximate()
+    voice = _voice(adapter)
+
+    def synthesize(text, syn_config=None, include_alignments=False):
+        yield voice.render(Utterance(text=text, symbols=("a",), ids=(3,)), syn_config)
+
+    voice.synthesize = synthesize
+    chunks = list(voice.synthesize_ssml('<speak><prosody rate="x-slow">slow</prosody> plain</speak>',
+                                        SynthesisConfig(audio=ON)))
+    spoken = [c.audio_float_array.size / c.sample_rate for c in chunks
+              if np.abs(c.audio_float_array).max() > 0.01]
+    assert spoken == [pytest.approx(SECONDS / 0.6, abs=0.01), pytest.approx(SECONDS, abs=0.01)]
+    assert adapter.speeds == [pytest.approx(1.05)] * 2
+
+
+def test_stream_yields_an_approximate_engines_stretched_sentence_whole():
+    adapter = _Approximate()
+    voice = _voice(adapter)
+    voice.prepare = lambda text, config: iter([Utterance(text="a", symbols=("a",), ids=(3,))])
+    chunks = list(voice.stream("a", SynthesisConfig(length_scale=1.5, audio=ON)))
+    assert [c.audio_float_array.size / RATE for c in chunks] == [pytest.approx(SECONDS * 1.5, abs=1 / RATE)]
+    assert adapter.speeds == [pytest.approx(1.05)]

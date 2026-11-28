@@ -187,6 +187,31 @@ stretched Piper speech as well as Piper's own slower and faster speech, from 0.5
 `TTSVoice.stream` yields a stretched sentence as one chunk. `<prosody duration>` fits the
 stretched audio, as it fits any other.
 
+## SuperTonic's pace
+
+SuperTonic has a `speed` of its own, but its speech does not follow it closely. At a slow rate
+a good part of the extra time comes out as silence, in an amount that differs from call to call,
+and from about 1.5x it drops words. So with `audio.stretch_pace` on, a SuperTonic voice speaks
+at its own pace and the audio is stretched, as above. Its adapter sets `PACE_BY_STRETCH = True`.
+A call that names `speed` still goes to the model, and with `stretch_pace` off a rate sets
+`speed` as before.
+
+Measured on `supertonic/F1/en`, three sentences each in English and French, three to four takes
+per rate. The ratio is the time from the first sound to the last, over the same sentence at the
+normal pace; the word error rate is a speech recogniser's (Parakeet TDT 0.6b v3):
+
+| Rate | Asked | Model speed: ratio (min to max), word errors | Stretch: ratio (min to max), word errors |
+| --- | --- | --- | --- |
+| `50%` | 2.00 | 1.63 (1.20 to 2.04), 2.6% | 2.01 (1.99 to 2.04), 0.0% |
+| `x-slow` | 1.67 | 1.44 (1.02 to 1.72), 2.6% | 1.68 (1.66 to 1.70), 0.0% |
+| `70%` | 1.43 | 1.21 (1.03 to 1.44), 2.6% | 1.44 (1.41 to 1.45), 1.3% |
+| `slow` | 1.25 | 1.12 (0.95 to 1.27), 2.6% | 1.26 (1.25 to 1.27), 5.1% |
+| `125%` | 0.80 | 0.88 (0.81 to 0.94), 6.2% | 0.81 (0.80 to 0.82), 6.2% |
+| `150%` | 0.67 | 0.78 (0.66 to 0.88), 10.9% | 0.67 (0.67 to 0.69), 6.2% |
+| `200%` | 0.50 | 0.36 (0.18 to 0.72), 68.8% | 0.51 (0.49 to 0.51), 6.2% |
+
+The normal pace itself had 5.1% word errors.
+
 ## Time
 
 * A `<break>` adds to the pause that is already pending. The edge of a `<p>` or `<s>` only
@@ -231,7 +256,7 @@ the reader slow down more than that.
 The markup elements that change the text or the model settings cost nothing after the model:
 `<prosody rate>`, `volume`, `<emphasis>`, `<break>`, `<mark>`, `say-as`, `sub` and `phoneme`.
 With `audio.stretch_pace` on, `<prosody rate>` and `<emphasis>` on an engine without pace
-control run a WSOLA time stretch (below).
+control, or on SuperTonic, run a WSOLA time stretch (below).
 The effects below run on the finished audio with numpy. Their cost grows in proportion to the
 length of the audio, and it does not include the model:
 
@@ -239,7 +264,7 @@ length of the audio, and it does not include the model:
 | --- | --- |
 | `<prosody pitch>` (unless the [engine makes it](#pitch-made-by-the-engine)), `vocal-tract-length` | a pitch shift (resample and time stretch) |
 | `<prosody duration>`, `amazon:max-duration` | a WSOLA time stretch |
-| `<prosody rate>`, `<emphasis>` with `stretch_pace`, on an [engine without pace control](#engines-without-pace-control) | a WSOLA time stretch, 15 to 30 ms per 2 s of 24 kHz audio |
+| `<prosody rate>`, `<emphasis>` with `stretch_pace`, on an [engine without pace control](#engines-without-pace-control) or [SuperTonic](#supertonics-pace) | a WSOLA time stretch, 15 to 30 ms per 2 s of 24 kHz audio |
 | `<amazon:effect name="whispered">`, `phonation="soft"` | shaped breath noise from a short-time Fourier transform |
 | `<amazon:effect name="drc">` | a dynamic range compressor, under 1 ms per second of audio |
 | `<amazon:auto-breaths>`, `<amazon:breath>` | a short generated breath |

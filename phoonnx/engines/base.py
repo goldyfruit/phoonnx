@@ -167,6 +167,12 @@ class BaseOnnxAdapter(ABC):
     # stretches its audio instead.
     PACE_CONTROL: bool = True
 
+    # True for an adapter whose own pace control does not make the speech at the pace asked
+    # for. With ``AudioPost.stretch_pace`` the engine then speaks at the voice's own pace and
+    # its audio is stretched, as for an engine without pace control. A call that names the
+    # engine's own speed key still goes to the engine.
+    PACE_BY_STRETCH: bool = False
+
     # The most ids one model call reads. ``None`` means the engine is never cut.
     # An engine that sets it also sets ``bos``, ``eos``, ``word_gap`` and
     # ``clause_marks`` (a set of ids) in ``configure``; :meth:`_cut` reads them.

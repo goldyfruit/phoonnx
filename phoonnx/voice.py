@@ -1202,11 +1202,16 @@ class TTSVoice:
                 include_alignments = False
 
         syn_config = self._with_params(syn_config, utterance)
+        factor = self._pace_stretch(syn_config)
+        engine_config = syn_config
+        if factor != 1.0 and self.adapter.PACE_CONTROL:
+            # The stretch is the whole change of pace: the engine speaks at the voice's own.
+            engine_config = replace(syn_config, length_scale=None, extra={
+                key: value for key, value in syn_config.extra.items() if key != "length_scale"})
         audio, phoneme_id_samples = self._infer(
-            utterance.ids, syn_config, include_alignments, utterance.streams,
+            utterance.ids, engine_config, include_alignments, utterance.streams,
             text=utterance.text)
 
-        factor = self._pace_stretch(syn_config)
         mono = np.squeeze(np.asarray(audio, dtype=np.float32))
         if factor != 1.0 and mono.ndim <= 1:  # a stretch is for one channel of samples
             mono = mono.reshape(-1)
@@ -1254,11 +1259,16 @@ class TTSVoice:
     def _pace_stretch(self, syn_config: SynthesisConfig) -> float:
         """How much ``audio.stretch_pace`` stretches this call's audio (1.0: not at all).
 
-        Only an engine without pace control is stretched. The factor is the call's length
-        scale (``extra`` first, then ``length_scale``) over the voice's own
-        (:meth:`_voice_length_scale`), within 0.5 to 2.
+        Only an engine without pace control, or one that sets ``PACE_BY_STRETCH``, is
+        stretched, and the latter not when the call names the engine's own speed key. The
+        factor is the call's length scale (``extra`` first, then ``length_scale``) over the
+        voice's own (:meth:`_voice_length_scale`), within 0.5 to 2.
         """
-        if not syn_config.audio.stretch_pace or self.adapter.PACE_CONTROL:
+        if not syn_config.audio.stretch_pace:
+            return 1.0
+        if self.adapter.PACE_CONTROL and (
+                not self.adapter.PACE_BY_STRETCH
+                or any(key in syn_config.extra for key in self.adapter.length_scale_params(1.0))):
             return 1.0
         call = syn_config.extra.get("length_scale", syn_config.length_scale)
         if call is None:
