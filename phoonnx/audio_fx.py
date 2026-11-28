@@ -39,6 +39,24 @@ def resample(audio: np.ndarray, ratio: float) -> np.ndarray:
     return np.interp(positions, np.arange(audio.size), audio).astype(np.float32)
 
 
+def _overlaps(within: np.ndarray, template: np.ndarray, step: int) -> np.ndarray:
+    """How well `template` matches `within` at every offset it fits at, on every `step`-th sample.
+
+    The best overlap is a matter of waveform shape, so comparing every `step`-th sample is
+    enough and cuts the cost of the search (nearly the whole of a time stretch) by that
+    factor. Offsets that differ by a multiple of `step` read the same samples of `within`, so
+    each such family is one correlation of contiguous arrays: the same sums as a matrix of
+    windows times the template, without the strided matrix, which no BLAS routine takes.
+    """
+    wanted = template[::step]
+    scores = np.empty(within.size - template.size + 1, within.dtype)
+    for phase in range(min(step, scores.size)):
+        count = len(range(phase, scores.size, step))
+        samples = within[phase: phase + (count - 1) * step + template.size: step]
+        scores[phase::step] = np.correlate(samples, wanted, "valid")[:count]
+    return scores
+
+
 def time_stretch(audio: np.ndarray, factor: float, sample_rate: int) -> np.ndarray:
     """Stretch `audio` to `factor` times its length (> 1 slower) without changing its pitch (WSOLA)."""
     audio = _as_float(audio)
@@ -68,11 +86,8 @@ def time_stretch(audio: np.ndarray, factor: float, sample_rate: int) -> np.ndarr
             if high <= low or template.size < frame:
                 start = min(wanted, padded.size - frame)
             else:
-                # Compare every `step`-th sample: the best overlap is a matter of waveform shape,
-                # and this cuts the cost of the search (the whole effect) by the same factor.
-                candidates = np.lib.stride_tricks.sliding_window_view(
-                    padded[low: high + frame], frame)[:, ::step]
-                start = low + int(np.argmax(candidates @ template[::step]))
+                start = low + int(np.argmax(
+                    _overlaps(padded[low: high + frame], template, step)))
         segment = padded[start: start + frame]
         if segment.size < frame:
             segment = np.pad(segment, (0, frame - segment.size))
